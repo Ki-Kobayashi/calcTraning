@@ -4,4 +4,11 @@
 
 <!--   ボタン-->
     <string name="btn_game_start">START</string>
+    <string name="nokori_question_text">残り問題数</string>
+    <string name="correct">正解数</string>
+    <string name="crrect_point">正答率</string>
+    <string name="equal">=</string>
+    <string name="plus">+</string>
+    <string name="ans_correct">答え合わせ</string>
+    <string name="back">戻る</string>
 </resources>
