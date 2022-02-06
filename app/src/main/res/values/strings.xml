@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">計算特訓</string>
+    <string name="tv_tap_game_start">問題数を選択してSTARTしましょう！</string>
+
+<!--   ボタン-->
+    <string name="btn_game_start">START</string>
+</resources>
