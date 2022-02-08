@@ -15,36 +15,36 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="41dp"
         android:layout_marginBottom="208dp"
-        app:layout_constraintBottom_toTopOf="@+id/clickGameStartTextView"
+        app:layout_constraintBottom_toTopOf="@+id/textViewClickGameStart"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/image_title" />
 
     <TextView
-        android:id="@+id/clickGameStartTextView"
+        android:id="@+id/textViewClickGameStart"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="26dp"
         android:text="@string/tv_tap_game_start"
         android:textSize="16sp"
-        app:layout_constraintBottom_toTopOf="@+id/selectQuestionSpinner"
+        app:layout_constraintBottom_toTopOf="@+id/spinnerSelectQuestion"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topImageView" />
 
     <Spinner
-        android:id="@+id/selectQuestionSpinner"
+        android:id="@+id/spinnerSelectQuestion"
         android:layout_width="232dp"
         android:layout_height="0dp"
         android:layout_marginBottom="168dp"
-        app:layout_constraintBottom_toTopOf="@+id/gameStartBtn"
+        app:layout_constraintBottom_toTopOf="@+id/btnGameStart"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/clickGameStartTextView" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewClickGameStart" />
 
     <Button
-        android:id="@+id/gameStartBtn"
+        android:id="@+id/btnGameStart"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -56,6 +56,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/selectQuestionSpinner" />
+        app:layout_constraintTop_toBottomOf="@+id/spinnerSelectQuestion" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
