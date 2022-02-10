@@ -12,8 +12,9 @@
     <string name="ans_correct">答え合わせ</string>
     <string name="back">戻る</string>
     <string name="is_correct">正解</string>
-    <string name="is_ont_correct">不正解</string>
-    
+    <string name="is_not_correct">不正解</string>
+    <string name="game_finished">ゲーム終了</string>
+
 <!--    選択肢-->
     <string-array name="num_of_question">
         <item>10</item>
