@@ -1,69 +1,83 @@
 package com.example.calctraining
 
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.os.Bundle
-import android.os.Handler
 import android.view.View
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.example.calctraining.consts.Consts
 import kotlinx.android.synthetic.main.activity_test.*
-import java.lang.StringBuilder
 import java.util.*
+import kotlin.concurrent.schedule
 import kotlin.random.Random
 
 class TestActivity : AppCompatActivity(), View.OnClickListener {
+        private val TAG = this::class.java.simpleName
         private var mGameFinished = false
-        private var mRemaining = 0
+        private lateinit var soundPool: SoundPool
+        private lateinit var mTimer: Timer
 
-        // TODO:正解数。正答率追加
+        // 音源のリソースID
+        private var intSoundId_Correct = 0
+        private var intSoundId_InCorrect = 0
+        // 残りの問題数
+        private var mRemaining = 0
+        // 正解数
+        private var mCountCorrect = 0
+        // 正答率
+        private var mCountPoint = 0
+
+        private var mNowQuestionNo = 0
         private var mIntFormulaLeft = 0
         private var mIntFormulaRight = 0
         private var mIntOperator = 0
-        private var mIntAns = 0
-        private var mStringAns = ""
-
-        private lateinit var mTimer: Timer
-        private lateinit var mHandler: Handler
+        private var mRealAns = 0
 
         override fun onCreate(savedInstanceState: Bundle?) {
                 super.onCreate(savedInstanceState)
                 setContentView(R.layout.activity_test)
 
                 initView()
-
-                // 残り問題数が0になるまで出題
-                for (i in mRemaining downTo 0) {
-                        textViewRemaining.text = i.toString()
-                        if (i == 0) {
-                                gameFinished()
-                                return
-                        }
-
-                        giveQuestion()
-                }
+                giveQuestion()
         }
 
-        // TODO:正答率・正回数を表示
-//        /**
-//         * 問題終了かチェック
-//         */
-//        private fun isGameFinish(): Boolean{
-//                if (textViewRemaining.toString().toInt() == 0) {
-//                        return true
-//                }
-//
-//        }
+        override fun onResume() {
+                super.onResume()
+                mTimer = Timer()
+                // 音の準備は「onResume」メソッドでやる
+                soundPool =
+                        SoundPool.Builder().setAudioAttributes(
+                                AudioAttributes.Builder()
+                                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                                        .build()
+                        ).setMaxStreams(1).build()
+
+                // 音源をセット
+                intSoundId_Correct = soundPool.load(this, R.raw.sound_correct, 1)
+                intSoundId_InCorrect = soundPool.load(this, R.raw.sound_incorrect, 1)
+        }
+
+        override fun onPause() {
+                super.onPause()
+                // TODO:★resumeでインスタンス化したものは、ここで後処理をする
+                soundPool.release()
+                mTimer.cancel()
+        }
 
         /**
          * Vieｗの初期設定
          */
-        private fun initView(){
+        private fun initView() {
                 val bundle = intent.extras!!
                 mRemaining = bundle.getInt(Consts.IntentKey.NUMBER_OF_QUESTION)
+                textViewRemaining.text = mRemaining.toString()
 
                 disableView(btnBack)
                 disableView(btnAnsChk)
 
-                btnAnsChk.setOnClickListener { chkAnswer(textViewAnswer.toString()) }
+                btnAnsChk.setOnClickListener { chkAnswer(textViewAnswer.text.toString()) }
+                btnBack.setOnClickListener { finish() }
 
                 btn0.setOnClickListener(this)
                 btn1.setOnClickListener(this)
@@ -80,9 +94,21 @@ class TestActivity : AppCompatActivity(), View.OnClickListener {
         }
 
         /**
+         * 問題の初期化
+         */
+        private fun initQuestion() {
+                textViewAnswer.text = ""
+                imageViewIsCorrect.visibility = View.INVISIBLE
+                textViewIsCorrectMsg.visibility = View.INVISIBLE
+                enableAllNumBtn()
+                disableView(btnAnsChk)
+        }
+
+        /**
          * 問題出題
          */
         private fun giveQuestion() {
+                // 前の回答など初期化
                 initQuestion()
 
                 mIntFormulaLeft = Random.nextInt(0, 100) + 1
@@ -95,13 +121,141 @@ class TestActivity : AppCompatActivity(), View.OnClickListener {
                 when (mIntOperator) {
                         1 -> {
                                 textViewOperator.text = "+"
-                                mIntAns = mIntFormulaLeft + mIntFormulaRight
+                                mRealAns = mIntFormulaLeft + mIntFormulaRight
                         }
                         2 -> {
                                 textViewOperator.text = "-"
-                                mIntAns = mIntFormulaLeft - mIntFormulaRight
+                                mRealAns = mIntFormulaLeft - mIntFormulaRight
                         }
                 }
+        }
+
+        /**
+         * 回答チェック処理
+         */
+        private fun chkAnswer(userAns: String) {
+                if (userAns.isEmpty() || userAns.isBlank()) return
+                // 数字入力の無効化
+                disableAllNumBtn()
+                val intUserAns = userAns.toInt()
+
+                if (intUserAns == mRealAns) {
+                        // 正解の場合
+                        mCountCorrect++
+                        textViewCorrect.text = mCountCorrect.toString()
+                        imageViewIsCorrect.setImageResource(R.drawable.pic_correct)
+                        textViewIsCorrectMsg.text = resources.getString(R.string.is_correct)
+                        soundPool.play(intSoundId_Correct, 1.0f, 1.0f, 0, 0, 1.0f)
+                } else {
+                        //不正解の場合
+                        imageViewIsCorrect.setImageResource(R.drawable.pic_incorrect)
+                        textViewIsCorrectMsg.text = resources.getString(R.string.is_not_correct)
+                        soundPool.play(intSoundId_InCorrect, 1.0f, 1.0f, 0, 0, 1.0f)
+                }
+
+                imageViewIsCorrect.visibility = View.VISIBLE
+                textViewIsCorrectMsg.visibility = View.VISIBLE
+
+                // 残り問題数
+                mNowQuestionNo += 1
+                textViewRemaining.text = (mRemaining - mNowQuestionNo).toString()
+                // 正解数
+                textViewCorrect.text = mCountCorrect.toString()
+                // 正答率
+                if (mCountCorrect != 0) {
+                        textViewPoint.text =
+                                ((mCountCorrect.toDouble() / mNowQuestionNo.toDouble()) * 100).toInt()
+                                        .toString()
+                }
+
+
+                // タイマーセット
+                if (mRemaining == mNowQuestionNo) {
+                        gameFinished()
+                        return
+                } else {
+                        mTimer.schedule(1000) { runOnUiThread { giveQuestion() } }
+                }
+        }
+
+        /**
+         * 計算ゲーム終了
+         */
+        private fun gameFinished() {
+                // TODO: ゲーム終了のポップアップ表示
+//                textViewCorrect.text = resources.getString(R.string.game_finished)
+//                textViewCorrect.visibility = View.VISIBLE
+
+                enableView(btnBack)
+                disableView(btnAnsChk)
+                textViewIsCorrectMsg.text = "テスト終了"
+        }
+
+        override fun onClick(v: View?) {
+                val button = v as Button
+
+                when (v) {
+                        btn0 -> {
+                                if (textViewAnswer.text.toString() == "0" || textViewAnswer.text.toString() == "-") return
+                                textViewAnswer.append(button.text)
+                                enableView(btnAnsChk)
+                        }
+                        btnClear -> {
+                                textViewAnswer.text = ""
+                                disableView(btnAnsChk)
+                        }
+                        btnMinus -> {
+                                if (textViewAnswer.text.isBlank()) {
+                                        textViewAnswer.text = "-"
+                                        disableView(btnAnsChk)
+                                }
+                        }
+                        else -> {
+                                if (textViewAnswer.text.toString() == "0") {
+                                        // 0が入力されている場合は、押下された数字に置き換える
+                                        textViewAnswer.text = button.text
+                                } else {
+                                        textViewAnswer.append(button.text)
+                                }
+                                enableView(btnAnsChk)
+                        }
+                }
+        }
+
+        /**
+         * 数字入力の無効化
+         */
+        private fun disableAllNumBtn() {
+                disableView(btn0)
+                disableView(btn1)
+                disableView(btn2)
+                disableView(btn3)
+                disableView(btn4)
+                disableView(btn5)
+                disableView(btn6)
+                disableView(btn7)
+                disableView(btn8)
+                disableView(btn9)
+                disableView(btnMinus)
+                disableView(btnClear)
+        }
+
+        /**
+         * 数字入力の無効化
+         */
+        private fun enableAllNumBtn() {
+                enableView(btn0)
+                enableView(btn1)
+                enableView(btn2)
+                enableView(btn3)
+                enableView(btn4)
+                enableView(btn5)
+                enableView(btn6)
+                enableView(btn7)
+                enableView(btn8)
+                enableView(btn9)
+                enableView(btnMinus)
+                enableView(btnClear)
         }
 
         /**
@@ -115,88 +269,8 @@ class TestActivity : AppCompatActivity(), View.OnClickListener {
         /**
          * Viewの活性化
          */
-        private fun enabieView(v: View){
+        private fun enableView(v: View) {
                 v.isEnabled = true
-                v.setBackgroundColor(resources.getColor(R.color.purple_200))
+                v.setBackgroundColor(resources.getColor(R.color.purple_500))
         }
-
-        /**
-         * 問題の初期化
-         */
-        private fun initQuestion() {
-                textViewAnswer.text = ""
-                imageViewIsCorrect.visibility = View.INVISIBLE
-                textViewCorrect.visibility = View.INVISIBLE
-        }
-
-
-        /**
-         * 回答チェック処理
-         */
-        private fun chkAnswer(userAns: String) {
-                if(userAns.isEmpty() || userAns.isBlank()) return
-
-                val intUserAns = userAns.toInt()
-                enabieView(btnAnsChk)
-
-                if (intUserAns == mIntAns) {
-                        imageViewIsCorrect.setImageResource(R.drawable.pic_correct)
-                        textViewCorrect.text = resources.getString(R.string.is_correct)
-                } else {
-                        imageViewIsCorrect.setImageResource(R.drawable.pic_incorrect)
-                        textViewCorrect.text = resources.getString(R.string.is_not_correct)
-                }
-                imageViewIsCorrect.visibility = View.VISIBLE
-                textViewCorrect.visibility = View.VISIBLE
-
-                // TODO:タイマーセット
-        }
-
-        /**
-         * 計算ゲーム終了
-         */
-        private fun gameFinished() {
-                textViewCorrect.text = resources.getString(R.string.game_finished)
-                textViewCorrect.visibility = View.VISIBLE
-
-                enabieView(btnBack)
-
-                // TODO:戻る以外ボタンを押せなくする
-                // TODO:戻るボタン押下でTOP画面へ
-
-        }
-
-        /**
-         *   ユーザーの入力値をセット
-         */
-        private fun setAnswerText(btnAns: String){
-                textViewAnswer.text = mStringAns + btnAns
-        }
-
-        override fun onClick(v: View?) {
-
-                when(v){
-                        btn0 -> {
-                                if (mStringAns.isNotBlank()) textViewAnswer.text = "-"
-                        }
-                        btn1 -> setAnswerText("0")
-                        btn2 -> setAnswerText("0")
-                        btn3 -> setAnswerText("0")
-                        btn4 -> setAnswerText("0")
-                        btn5 -> setAnswerText("0")
-                        btn6 -> setAnswerText("0")
-                        btn7 -> setAnswerText("0")
-                        btn8 -> setAnswerText("0")
-                        btn9 -> setAnswerText("0")
-                        btnClear -> {
-                                textViewAnswer.text = ""
-                                mStringAns = ""
-                        }
-                        btnMinus -> {
-                                if (mStringAns.isBlank()) textViewAnswer.text = "-"
-                        }
-                }
-        }
-
-
 }

@@ -9,6 +9,7 @@ import com.example.calctraining.consts.Consts
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
+        private val TAG = this::class.java.simpleName
 
         override fun onCreate(savedInstanceState: Bundle?) {
                 super.onCreate(savedInstanceState)
